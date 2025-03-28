@@ -1,13 +1,11 @@
-name: Build and Deploy Next.js App
+name: Build, Push and Deploy Next.js App
 
 on:
   push:
-    branches: [main] # Change this to your default branch if needed
-  pull_request:
-    branches: [main] # Change this to your default branch if needed
+    branches: [main] # Cambia esto a tu rama principal si es diferente
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +26,15 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/nextjs-app:latest
+          tags: a01642529/nextjs-app:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trigger OCI Container Restart
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ secrets.OCI_WEBHOOK_URL }}
+          method: "POST"
+          contentType: "application/json"
+          data: '{"trigger": "github-actions", "repository": "${{ github.repository }}", "commit": "${{ github.sha }}"}'
+          preventFailureOnNoResponse: true # Para evitar que falle si OCI no responde
